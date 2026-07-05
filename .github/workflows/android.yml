@@ -25,6 +25,17 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
+      - name: Create gradle wrapper directory
+        run: mkdir -p gradle/wrapper
+
+      - name: Download Gradle wrapper JAR
+        run: |
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/releases/download/v8.5/gradle-8.5-wrapper.jar
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "Failed to download Gradle wrapper JAR"
+            exit 1
+          fi
+
       - name: Make Gradle executable
         run: chmod +x gradlew
 
@@ -35,6 +46,11 @@ jobs:
         run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: "**/build/outputs/apk/debug/*.apk"
+        if: success()      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
