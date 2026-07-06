@@ -1,6 +1,5 @@
 .env.release-signing
 keystore/
 .gradle/
-*gradle*/
 build/
 .kotlin/
