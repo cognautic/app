@@ -38,6 +38,7 @@ import com.cognautic.app.R
 import com.cognautic.app.core.models.*
 import com.cognautic.app.ui.chat.ChatViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel,
@@ -90,49 +91,73 @@ fun ChatScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (workspace != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { viewModel.onBackToWorkspaces() }) {
-                             Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
+            CenterAlignedTopAppBar(
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                           text = workspace?.name ?: "Cognautic",
-                           style = MaterialTheme.typography.titleMedium,
-                           color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                            text = workspace?.name ?: "Cognautic",
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1
                         )
+                        if (workspace != null) {
+                            Text(
+                                text = "Coding agent",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
                     }
-                   Row {
-                       IconButton(onClick = { viewModel.onOpenInEditor() }) {
-                           Icon(
-                               imageVector = Icons.Default.Code,
-                               contentDescription = "Open in Editor",
-                               tint = MaterialTheme.colorScheme.onBackground
-                           )
-                       }
-                       IconButton(onClick = onSettingsClick) {
-                           Icon(
-                               imageVector = Icons.Default.Settings,
-                               contentDescription = "Settings",
-                               tint = MaterialTheme.colorScheme.onBackground
-                           )
-                       }
-                   }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { viewModel.onBackToWorkspaces() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (workspace != null) {
+                        IconButton(onClick = { viewModel.onOpenInEditor() }) {
+                            Icon(Icons.Default.Code, contentDescription = "Open in editor")
+                        }
+                    }
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                )
+            )
+        },
+        bottomBar = {
+            Surface(
+                tonalElevation = 3.dp,
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    ModelSelector(
+                        models = availableModels,
+                        providers = providers,
+                        selectedModel = selectedModel,
+                        onModelSelected = { viewModel.onModelSelected(it) }
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    ChatInput(
+                        value = input,
+                        onValueChange = { viewModel.onInputChange(it) },
+                        onAction = { viewModel.sendMessage() },
+                        onUploadClick = { filePickerLauncher.launch("*/*") },
+                        isLoading = isLoading,
+                        attachments = pendingAttachments,
+                        onRemoveAttachment = { viewModel.onRemoveAttachment(it) }
+                    )
                 }
-            } else {
-                 Box(Modifier.fillMaxWidth().padding(8.dp)) {
-                      IconButton(onClick = { viewModel.onBackToWorkspaces() }, modifier = Modifier.align(Alignment.TopStart)) {
-                           Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
-                      }
-                      IconButton(onClick = onSettingsClick, modifier = Modifier.align(Alignment.TopEnd)) {
-                       Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
-                   }
-                 }
             }
         }
     ) { padding ->
@@ -140,15 +165,14 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             if (!isEmptyState || isLoading) {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 180.dp), 
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     itemsIndexed(messages) { index, message ->
                         if (message.isVisible && (message.role != Role.THINKING || showThinking)) {
@@ -181,7 +205,7 @@ fun ChatScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
-                contentAlignment = if (isEmptyState) Alignment.Center else Alignment.BottomCenter
+                contentAlignment = Alignment.Center
             ) {
                  Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -189,46 +213,35 @@ fun ChatScreen(
                 ) {
                     AnimatedVisibility(visible = isEmptyState, enter = fadeIn(), exit = fadeOut()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Image(
-                                painter = painterResource(id = R.drawable.logo),
-                                contentDescription = "Logo",
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentScale = ContentScale.Crop
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Surface(
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                tonalElevation = 2.dp
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.logo),
+                                    contentDescription = "Logo",
+                                    modifier = Modifier
+                                        .size(88.dp)
+                                        .padding(12.dp)
+                                        .clip(RoundedCornerShape(18.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
                             Text(
-                                "COGNAUTIC", 
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 28.sp, 
-                                    letterSpacing = 4.sp, 
-                                    fontWeight = FontWeight.Light
-                                ), 
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                                "Cognautic",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onBackground
                             )
-                            Spacer(modifier = Modifier.height(48.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                "Ask for a coding task in this workspace",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
-                    Box(Modifier.fillMaxWidth()) {
-                        ModelSelector(
-                            models = availableModels, 
-                            providers = providers,
-                            selectedModel = selectedModel, 
-                            onModelSelected = { viewModel.onModelSelected(it) }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    ChatInput(
-                        value = input, 
-                        onValueChange = { viewModel.onInputChange(it) }, 
-                        onAction = { viewModel.sendMessage() },
-                        onUploadClick = { filePickerLauncher.launch("*/*") },
-                        isLoading = isLoading,
-                        attachments = pendingAttachments,
-                        onRemoveAttachment = { viewModel.onRemoveAttachment(it) }
-                    )
                 }
             }
         }
@@ -256,30 +269,23 @@ fun ModelSelector(
     }
 
     Box {
-        Surface(
-            modifier = Modifier
-                .clickable { expanded = true }
-                .clip(RoundedCornerShape(8.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
-            color = Color.Transparent
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        AssistChip(
+            onClick = { expanded = true },
+            label = {
                 Text(
-                    text = selectedModel?.name ?: "Select Model",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = selectedModel?.name ?: "Select model",
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    Icons.Default.ArrowDropDown,
-                    contentDescription = "Select Model",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
+            },
+            leadingIcon = {
+                Icon(Icons.Default.Memory, contentDescription = null, modifier = Modifier.size(18.dp))
+            },
+            trailingIcon = {
+                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select model")
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         DropdownMenu(
             expanded = expanded,
@@ -299,7 +305,7 @@ fun ModelSelector(
                 singleLine = true
             )
             
-            Divider()
+            HorizontalDivider()
 
             if (models.isEmpty()) {
                  DropdownMenuItem(
@@ -330,7 +336,7 @@ fun ModelSelector(
                             }
                         )
                     }
-                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 }
             }
         }
@@ -361,60 +367,61 @@ fun ChatInput(
                 }
             }
         }
-        Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 140.dp),
-            placeholder = { Text("Ask anything...") },
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
+                    shape = RoundedCornerShape(28.dp)
             ),
-            maxLines = 15
-        )
-        
-        // Action Button (Bottom Right)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(8.dp)
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
         ) {
-            FilledIconButton(
-                onClick = onAction,
-                enabled = value.isNotBlank() || attachments.isNotEmpty() || isLoading,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = if (isLoading) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
-                if (isLoading) {
-                    Icon(Icons.Default.Stop, contentDescription = "Stop")
-                } else {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "Send")
+                IconButton(onClick = onUploadClick) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Upload",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                TextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 56.dp, max = 160.dp),
+                    placeholder = { Text("Message Cognautic") },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    maxLines = 8
+                )
+                FilledIconButton(
+                    onClick = onAction,
+                    enabled = value.isNotBlank() || attachments.isNotEmpty() || isLoading,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = if (isLoading) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    if (isLoading) {
+                        Icon(Icons.Default.Stop, contentDescription = "Stop")
+                    } else {
+                        Icon(Icons.Default.ArrowUpward, contentDescription = "Send")
+                    }
                 }
             }
         }
-
-        // Upload Button (Bottom Left)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(8.dp)
-        ) {
-            IconButton(onClick = onUploadClick) {
-                Icon(
-                    Icons.Default.Add, 
-                    contentDescription = "Upload",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
     }
 }
 
@@ -436,15 +443,21 @@ fun MessageBubble(
         contentAlignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(
+                topStart = 22.dp,
+                topEnd = 22.dp,
+                bottomStart = if (isUser) 22.dp else 6.dp,
+                bottomEnd = if (isUser) 6.dp else 22.dp
+            ),
             color = when {
                 isUser -> MaterialTheme.colorScheme.primary
                 isError -> MaterialTheme.colorScheme.errorContainer
                 isToolCall -> MaterialTheme.colorScheme.secondaryContainer
-                isThinking -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                else -> Color.Transparent
+                isThinking -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
             },
-            modifier = Modifier.widthIn(max = 340.dp)
+            tonalElevation = if (isUser) 0.dp else 1.dp,
+            modifier = Modifier.widthIn(max = 520.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (isThinking) {
@@ -464,14 +477,14 @@ fun MessageBubble(
                         Text(
                             text = "Thinking",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                         )
                     }
                     AnimatedVisibility(visible = isThinkingExpanded) {
                         Text(
                             text = message.content,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }
@@ -515,13 +528,13 @@ fun MessageBubble(
                             Text(
                                 text = message.content,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = when {
-                                    isUser -> MaterialTheme.colorScheme.onPrimary
-                                    isError -> MaterialTheme.colorScheme.onErrorContainer
-                                    isToolCall -> MaterialTheme.colorScheme.onSecondaryContainer
-                                    else -> MaterialTheme.colorScheme.onBackground
-                                }
-                            )
+                            color = when {
+                                isUser -> MaterialTheme.colorScheme.onPrimary
+                                isError -> MaterialTheme.colorScheme.onErrorContainer
+                                isToolCall -> MaterialTheme.colorScheme.onSecondaryContainer
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
                         }
                     }
                     

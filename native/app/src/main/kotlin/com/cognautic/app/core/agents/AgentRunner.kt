@@ -115,13 +115,6 @@ class AgentRunner(private val context: android.content.Context, private val work
 
             val toolCall = parseToolCall(currentResponse)
             if (toolCall != null) {
-                if (config.showThinking && combineThinking(providerThinking, tagThinking).isBlank()) {
-                    emit(ChatMessage(
-                        id = thinkingId,
-                        role = Role.THINKING,
-                        content = "Need ${toolCall.name} to continue the coding task."
-                    ))
-                }
                 // 1. Emit PENDING Tool Call
                 val toolCallMsg = ChatMessage(
                     id = messageId,

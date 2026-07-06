@@ -33,6 +33,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.luminance
 import android.app.Activity
 import com.google.android.gms.ads.MobileAds
 import com.cognautic.app.ui.components.AdMobBanner
@@ -58,11 +59,12 @@ fun CognauticApp() {
         val notifications by viewModel.notifications.collectAsState()
         var showSettings by remember { mutableStateOf(false) }
         val view = LocalView.current
+        val colorScheme = MaterialTheme.colorScheme
 
-        LaunchedEffect(Unit) {
+        LaunchedEffect(colorScheme) {
             val window = (view.context as Activity).window
-            window.statusBarColor = android.graphics.Color.parseColor("#111111")
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            window.statusBarColor = colorScheme.surface.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = colorScheme.surface.luminance() > 0.5f
             
             // Check for MANAGE_EXTERNAL_STORAGE on Android 11+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -236,7 +238,7 @@ fun SettingsDialog(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Show Thinking", style = MaterialTheme.typography.titleSmall)
                         Text(
-                            "Display model reasoning and agent progress notes",
+                            "Display provider-supplied model reasoning when available",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
