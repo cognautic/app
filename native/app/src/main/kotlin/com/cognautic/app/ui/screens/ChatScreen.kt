@@ -306,7 +306,7 @@ fun ModelSelector(
                 singleLine = true
             )
             
-            HorizontalDivider()
+            Divider()
 
             if (models.isEmpty()) {
                  DropdownMenuItem(
@@ -337,7 +337,7 @@ fun ModelSelector(
                             }
                         )
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 }
             }
         }
