@@ -52,6 +52,7 @@ fun ChatScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val pendingTool by viewModel.pendingTool.collectAsState()
     val pendingAttachments by viewModel.pendingAttachments.collectAsState()
+    val showThinking by viewModel.showThinking.collectAsState()
 
     val context = LocalContext.current
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -150,8 +151,11 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     itemsIndexed(messages) { index, message ->
-                        if (message.isVisible) {
-                            val showLabel = index == 0 || messages[index - 1].role == Role.USER
+                        if (message.isVisible && (message.role != Role.THINKING || showThinking)) {
+                            val previousVisibleMessage = messages
+                                .take(index)
+                                .lastOrNull { it.isVisible && it.role != Role.THINKING }
+                            val showLabel = previousVisibleMessage == null || previousVisibleMessage.role == Role.USER
                             MessageBubble(
                                 message = message,
                                 showLabel = showLabel,
@@ -424,6 +428,8 @@ fun MessageBubble(
     val isUser = message.role == Role.USER
     val isError = message.role == Role.ERROR
     val isToolCall = message.role == Role.TOOL_CALL
+    val isThinking = message.role == Role.THINKING
+    var isThinkingExpanded by remember(message.id) { mutableStateOf(false) }
     
     Box(
         modifier = Modifier.fillMaxWidth(),
@@ -435,87 +441,118 @@ fun MessageBubble(
                 isUser -> MaterialTheme.colorScheme.primary
                 isError -> MaterialTheme.colorScheme.errorContainer
                 isToolCall -> MaterialTheme.colorScheme.secondaryContainer
+                isThinking -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                 else -> Color.Transparent
             },
             modifier = Modifier.widthIn(max = 340.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                if (!isUser && !isError && showLabel) {
-                    Text(
-                        text = "AI", 
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isToolCall && message.toolStatus != null) {
-                         val color = when (message.toolStatus) {
-                             ToolStatus.PENDING -> Color(0xFF8A8A8A)
-                             ToolStatus.EXECUTING -> MaterialTheme.colorScheme.primary
-                             ToolStatus.DONE -> Color(0xFFCFCFCF)
-                             ToolStatus.FAILED -> Color(0xFF4A4A4A)
-                         }
-                         Box(
-                             modifier = Modifier
-                                 .size(8.dp)
-                                 .background(color, androidx.compose.foundation.shape.CircleShape)
-                         )
-                         Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Column {
-                        if (message.attachments.isNotEmpty()) {
-                             Row(
-                                modifier = Modifier
-                                    .padding(bottom = 8.dp)
-                                    .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                message.attachments.forEach { att ->
-                                    AttachmentBubble(att)
-                                }
-                            }
-                        }
-                        Text(
-                            text = message.content,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = when {
-                                isUser -> MaterialTheme.colorScheme.onPrimary
-                                isError -> MaterialTheme.colorScheme.onErrorContainer
-                                isToolCall -> MaterialTheme.colorScheme.onSecondaryContainer
-                                else -> MaterialTheme.colorScheme.onBackground
-                            }
-                        )
-                    }
-                }
-                
-                if (isToolCall && message.toolData != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column(
+                if (isThinking) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
+                            .clickable { isThinkingExpanded = !isThinkingExpanded },
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        message.toolData.forEach { (k, v) ->
-                            if (k != "name" && k != "content" && k != "old_content" && k != "new_content") {
-                                Text("$k: $v", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                        Icon(
+                            imageVector = if (isThinkingExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (isThinkingExpanded) "Collapse thinking" else "Expand thinking",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Thinking",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                        )
+                    }
+                    AnimatedVisibility(visible = isThinkingExpanded) {
+                        Text(
+                            text = message.content,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                } else {
+                    if (!isUser && !isError && showLabel) {
+                        Text(
+                            text = "AI",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isToolCall && message.toolStatus != null) {
+                             val color = when (message.toolStatus) {
+                                 ToolStatus.PENDING -> Color(0xFF8A8A8A)
+                                 ToolStatus.EXECUTING -> MaterialTheme.colorScheme.primary
+                                 ToolStatus.DONE -> Color(0xFFCFCFCF)
+                                 ToolStatus.FAILED -> Color(0xFF4A4A4A)
+                             }
+                             Box(
+                                 modifier = Modifier
+                                     .size(8.dp)
+                                     .background(color, androidx.compose.foundation.shape.CircleShape)
+                             )
+                             Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Column {
+                            if (message.attachments.isNotEmpty()) {
+                                 Row(
+                                    modifier = Modifier
+                                        .padding(bottom = 8.dp)
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    message.attachments.forEach { att ->
+                                        AttachmentBubble(att)
+                                    }
+                                }
                             }
+                            Text(
+                                text = message.content,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = when {
+                                    isUser -> MaterialTheme.colorScheme.onPrimary
+                                    isError -> MaterialTheme.colorScheme.onErrorContainer
+                                    isToolCall -> MaterialTheme.colorScheme.onSecondaryContainer
+                                    else -> MaterialTheme.colorScheme.onBackground
+                                }
+                            )
                         }
                     }
                     
-                    if (isPending) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+                    if (isToolCall && message.toolData != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                .padding(8.dp)
                         ) {
-                            TextButton(onClick = { onApproval(false) }) {
-                                Text("Reject", color = MaterialTheme.colorScheme.error)
+                            message.toolData.forEach { (k, v) ->
+                                if (k != "name" && k != "content" && k != "old_content" && k != "new_content") {
+                                    Text("$k: $v", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                                }
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(onClick = { onApproval(true) }) {
-                                Text("Approve")
+                        }
+
+                        if (isPending) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(onClick = { onApproval(false) }) {
+                                    Text("Reject", color = MaterialTheme.colorScheme.error)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(onClick = { onApproval(true) }) {
+                                    Text("Approve")
+                                }
                             }
                         }
                     }

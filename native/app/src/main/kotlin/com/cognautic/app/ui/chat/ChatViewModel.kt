@@ -31,6 +31,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _isAutoApprove = MutableStateFlow(false)
     val isAutoApprove: StateFlow<Boolean> = _isAutoApprove.asStateFlow()
 
+    private val _showThinking = MutableStateFlow(false)
+    val showThinking: StateFlow<Boolean> = _showThinking.asStateFlow()
+
+    private val _temperature = MutableStateFlow(0.2f)
+    val temperature: StateFlow<Float> = _temperature.asStateFlow()
+
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
@@ -102,6 +108,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         _isAutoApprove.value = prefs.getBoolean("isAutoApprove", false)
+        _showThinking.value = prefs.getBoolean("showThinking", false)
+        _temperature.value = prefs.getFloat("temperature", 0.2f).coerceIn(0f, 2f)
         _globalRules.value = prefs.getString("global_rules", "") ?: ""
         loadProviders()
         loadWorkspaces()
@@ -110,6 +118,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun onAutoApproveChange(value: Boolean) {
         _isAutoApprove.value = value
         prefs.edit().putBoolean("isAutoApprove", value).apply()
+    }
+
+    fun onShowThinkingChange(value: Boolean) {
+        _showThinking.value = value
+        prefs.edit().putBoolean("showThinking", value).apply()
+    }
+
+    fun onTemperatureChange(value: Float) {
+        val safeValue = value.coerceIn(0f, 2f)
+        _temperature.value = safeValue
+        prefs.edit().putFloat("temperature", safeValue).apply()
     }
 
     fun onGlobalRulesChange(value: String) {
@@ -414,6 +433,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         _isLoading.value = true
         _activeWorkspaces.value = _activeWorkspaces.value + currentWs.id
         val autoApprove = _isAutoApprove.value
+        val agentConfig = AgentConfig(
+            showThinking = _showThinking.value,
+            temperature = _temperature.value
+        )
         val gRules = _globalRules.value
         val wsRules = currentWs.rules
         
@@ -426,6 +449,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     model = model, 
                     provider = provider, 
                     history = getChatHistory(currentWs.id),
+                    config = agentConfig,
                     globalRules = gRules,
                     workspaceRules = wsRules
                 ) { msgId, name, args ->
@@ -443,6 +467,19 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     deferred.await()
                 }
                 .collect { message ->
+                    if (message.role == Role.ERROR) {
+                        showNotification(message.content)
+                        if (_currentWorkspace.value?.id == currentWs.id) {
+                            val existingIdx = _messages.value.indexOfFirst { it.id == message.id }
+                            _messages.value = if (existingIdx != -1) {
+                                _messages.value.toMutableList().apply { set(existingIdx, message) }
+                            } else {
+                                _messages.value + message
+                            }
+                        }
+                        return@collect
+                    }
+
                     // If this is the current workspace, update live UI
                     if (_currentWorkspace.value?.id == currentWs.id) {
                         val existingIdx = _messages.value.indexOfFirst { it.id == message.id }
@@ -463,10 +500,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         history + message
                     }
                     saveChatHistory(currentWs.id, updatedHistory)
-                    
-                    if (message.role == Role.ERROR) {
-                        showNotification(message.content)
-                    }
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 // Expected on stop
@@ -615,6 +648,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val obj = jsonArray.getJSONObject(i)
                 val roleStr = obj.optString("role", "SYSTEM")
                 val role = try { Role.valueOf(roleStr) } catch(e:Exception) { Role.SYSTEM }
+                if (role == Role.ERROR) continue
                 
                 val toolMap: Map<String, String>? = if (obj.has("toolData")) {
                      val tData = obj.getJSONObject("toolData")
@@ -663,7 +697,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun saveChatHistory(workspaceId: String, messages: List<ChatMessage>) {
         val jsonArray = JSONArray()
-        messages.forEach { msg ->
+        messages.filter { it.role != Role.ERROR }.forEach { msg ->
             val obj = JSONObject().apply {
                 put("id", msg.id)
                 put("role", msg.role.name)

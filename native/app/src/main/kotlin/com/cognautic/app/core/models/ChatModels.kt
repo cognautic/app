@@ -22,8 +22,13 @@ data class AiModel(
     val providerId: String
 )
 
+data class AgentConfig(
+    val showThinking: Boolean = false,
+    val temperature: Float = 0.2f
+)
+
 enum class Role {
-    USER, ASSISTANT, SYSTEM, TOOL_CALL, ERROR
+    USER, ASSISTANT, SYSTEM, TOOL_CALL, THINKING, ERROR
 }
 
 enum class ToolStatus {

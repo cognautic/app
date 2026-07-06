@@ -170,6 +170,8 @@ fun SettingsDialog(
 ) {
     val providers by viewModel.providers.collectAsState()
     val isAutoApprove by viewModel.isAutoApprove.collectAsState()
+    val showThinking by viewModel.showThinking.collectAsState()
+    val temperature by viewModel.temperature.collectAsState()
     var providerToEdit by remember { mutableStateOf<LlmProvider?>(null) }
     var showAddProvider by remember { mutableStateOf(false) }
     
@@ -223,6 +225,43 @@ fun SettingsDialog(
                         onCheckedChange = { viewModel.onAutoApproveChange(it) }
                     )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Show Thinking", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Display model reasoning and agent progress notes",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                    Switch(
+                        checked = showThinking,
+                        onCheckedChange = { viewModel.onShowThinkingChange(it) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Temperature ${"%.1f".format(temperature)}", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Lower values are steadier for coding; higher values explore more alternatives",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Slider(
+                    value = temperature,
+                    onValueChange = { viewModel.onTemperatureChange(it) },
+                    valueRange = 0f..2f,
+                    steps = 19,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
                 Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))

@@ -1,6 +1,7 @@
 package com.cognautic.app.core.agents
 
 import com.cognautic.app.core.models.AiModel
+import com.cognautic.app.core.models.AgentConfig
 import com.cognautic.app.core.models.ChatMessage
 import com.cognautic.app.core.models.Role
 import com.cognautic.app.core.network.LlmClient
@@ -22,6 +23,7 @@ class AgentRunner(private val context: android.content.Context, private val work
         model: AiModel, 
         provider: LlmProvider,
         history: List<ChatMessage>,
+        config: AgentConfig = AgentConfig(),
         globalRules: String = "",
         workspaceRules: String = "",
         approvalCallback: suspend (String, String, Map<String, String>) -> Boolean
@@ -46,7 +48,8 @@ class AgentRunner(private val context: android.content.Context, private val work
             3. Use 'write_file' to create or modify files.
             4. Provide concise plans before executing complex changes.
             5. Use 'run_command' to execute shell commands, run tests, or perform build operations.
-            6. You are an autonomous agent; use your tools proactively to solve the user's request.
+            6. You are an autonomous coding agent; use your tools proactively to inspect files, make changes, and verify results.
+            7. Prefer small, reliable steps: inspect before editing, preserve user changes, run focused verification, and stop when the task is complete.
             
             IMPORTANT: To use a tool, your ENTIRE response must be valid JSON matching the format:
             { "tool": "name", "args": { ... } }
@@ -61,18 +64,48 @@ class AgentRunner(private val context: android.content.Context, private val work
         while (loops < MAX_LOOPS) {
             loops++
             
+            var rawResponse = ""
             var currentResponse = ""
             val messageId = UUID.randomUUID().toString()
+            val thinkingId = UUID.randomUUID().toString()
+            var providerThinking = ""
+            var tagThinking = ""
             
             try {
-                LlmClient.generateStreamingCompletion(context, model, provider, activeMessages, systemPrompt)
+                LlmClient.generateStreamingCompletion(
+                    context = context,
+                    model = model,
+                    provider = provider,
+                    messages = activeMessages,
+                    systemPrompt = systemPrompt,
+                    temperature = config.temperature
+                )
                 .collect { chunk ->
-                    currentResponse += chunk
-                    val trimmed = currentResponse.trim()
-                    // Don't emit the message while it's being typed if it looks like a tool call (JSON or MD-JSON)
-                    val isLikelyTool = trimmed.startsWith("{") || trimmed.startsWith("```json") || trimmed.startsWith("```")
-                    if (!isLikelyTool) {
-                        emit(ChatMessage(messageId, Role.ASSISTANT, currentResponse))
+                    if (chunk.isThinking) {
+                        providerThinking += chunk.content
+                        if (config.showThinking) {
+                            val combinedThinking = combineThinking(providerThinking, tagThinking)
+                            if (combinedThinking.isNotBlank()) {
+                                emit(ChatMessage(thinkingId, Role.THINKING, combinedThinking))
+                            }
+                        }
+                    } else {
+                        rawResponse += chunk.content
+                        val parsed = splitVisibleAndThinking(rawResponse)
+                        currentResponse = parsed.visible
+                        tagThinking = parsed.thinking
+                        if (config.showThinking) {
+                            val combinedThinking = combineThinking(providerThinking, tagThinking)
+                            if (combinedThinking.isNotBlank()) {
+                                emit(ChatMessage(thinkingId, Role.THINKING, combinedThinking))
+                            }
+                        }
+                        val trimmed = currentResponse.trim()
+                        // Don't emit the message while it's being typed if it looks like a tool call (JSON or MD-JSON)
+                        val isLikelyTool = trimmed.startsWith("{") || trimmed.startsWith("```json") || trimmed.startsWith("```")
+                        if (!isLikelyTool && trimmed.isNotBlank()) {
+                            emit(ChatMessage(messageId, Role.ASSISTANT, currentResponse))
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -82,6 +115,13 @@ class AgentRunner(private val context: android.content.Context, private val work
 
             val toolCall = parseToolCall(currentResponse)
             if (toolCall != null) {
+                if (config.showThinking && combineThinking(providerThinking, tagThinking).isBlank()) {
+                    emit(ChatMessage(
+                        id = thinkingId,
+                        role = Role.THINKING,
+                        content = "Need ${toolCall.name} to continue the coding task."
+                    ))
+                }
                 // 1. Emit PENDING Tool Call
                 val toolCallMsg = ChatMessage(
                     id = messageId,
@@ -141,6 +181,61 @@ class AgentRunner(private val context: android.content.Context, private val work
     }
 
     private data class ParsedTool(val name: String, val args: Map<String, String>)
+
+    private data class ParsedResponse(val visible: String, val thinking: String)
+
+    private fun combineThinking(providerThinking: String, taggedThinking: String): String {
+        return listOf(providerThinking, taggedThinking)
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .joinToString("\n\n")
+    }
+
+    private fun splitVisibleAndThinking(text: String): ParsedResponse {
+        val visible = StringBuilder()
+        val thinking = StringBuilder()
+        var index = 0
+
+        while (index < text.length) {
+            val thinkStart = findNextThinkingStart(text, index)
+            if (thinkStart == -1) {
+                visible.append(text.substring(index))
+                break
+            }
+
+            visible.append(text.substring(index, thinkStart))
+            val startTag = if (text.startsWith("<thinking>", thinkStart, ignoreCase = true)) {
+                "<thinking>"
+            } else {
+                "<think>"
+            }
+            val contentStart = thinkStart + startTag.length
+            val endTag = if (startTag == "<thinking>") "</thinking>" else "</think>"
+            val thinkEnd = text.indexOf(endTag, contentStart, ignoreCase = true)
+            if (thinkEnd == -1) {
+                thinking.append(text.substring(contentStart))
+                break
+            }
+
+            thinking.append(text.substring(contentStart, thinkEnd))
+            index = thinkEnd + endTag.length
+        }
+
+        return ParsedResponse(
+            visible = visible.toString(),
+            thinking = thinking.toString()
+        )
+    }
+
+    private fun findNextThinkingStart(text: String, startIndex: Int): Int {
+        val think = text.indexOf("<think>", startIndex, ignoreCase = true)
+        val thinking = text.indexOf("<thinking>", startIndex, ignoreCase = true)
+        return when {
+            think == -1 -> thinking
+            thinking == -1 -> think
+            else -> minOf(think, thinking)
+        }
+    }
 
     private fun parseToolCall(text: String): ParsedTool? {
         var cleaned = text.trim()

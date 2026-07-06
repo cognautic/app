@@ -16,14 +16,20 @@ import java.net.URL
 
 // A basic HTTP Client using standard libraries to avoid dependency issues in this environment
 object LlmClient {
+    data class StreamChunk(
+        val content: String,
+        val isThinking: Boolean = false
+    )
 
     fun generateStreamingCompletion(
         context: Context,
         model: AiModel,
         provider: LlmProvider,
         messages: List<ChatMessage>,
-        systemPrompt: String? = null
-    ): Flow<String> = flow {
+        systemPrompt: String? = null,
+        temperature: Float = 0.2f
+    ): Flow<StreamChunk> = flow {
+        val safeTemperature = temperature.coerceIn(0f, 2f)
         val baseUrl = provider.baseUrl.trimEnd('/')
         val url = when (provider.protocol) {
             ModelProvider.OPENROUTER -> URL("$baseUrl/chat/completions")
@@ -36,10 +42,11 @@ object LlmClient {
             if (provider.protocol == ModelProvider.GOOGLE) {
                 put("contents", JSONArray().apply {
                     val mergedMessages = mutableListOf<JSONObject>()
-                    messages.forEach { msg ->
+                    messages.filter { it.role != Role.THINKING && it.role != Role.ERROR }.forEach { msg ->
                         val role = when (msg.role) {
                             Role.USER, Role.SYSTEM -> "user"
                             Role.ASSISTANT, Role.TOOL_CALL -> "model"
+                            Role.THINKING -> "model"
                             else -> "user"
                         }
                         
@@ -97,7 +104,7 @@ object LlmClient {
                 })
                 
                 put("generationConfig", JSONObject().apply {
-                    put("temperature", 0.7)
+                    put("temperature", safeTemperature.toDouble())
                     put("maxOutputTokens", 4096)
                 })
             } else if (provider.protocol == ModelProvider.ANTHROPIC) {
@@ -105,11 +112,14 @@ object LlmClient {
                     put("system", systemPrompt)
                 }
                 put("max_tokens", 4096)
+                put("temperature", safeTemperature.toDouble())
+                put("stream", true)
                 put("messages", JSONArray().apply {
-                    messages.forEach { msg ->
+                    messages.filter { it.role != Role.THINKING && it.role != Role.ERROR }.forEach { msg ->
                         put(JSONObject().apply {
                             put("role", when(msg.role) {
                                 Role.ASSISTANT, Role.TOOL_CALL -> "assistant"
+                                Role.THINKING -> "assistant"
                                 else -> "user" // SYSTEM and USER both map to user
                             })
                             put("content", msg.content)
@@ -119,6 +129,7 @@ object LlmClient {
             } else { // OpenAI / OpenRouter
                 put("model", model.id)
                 put("stream", true)
+                put("temperature", safeTemperature.toDouble())
                 put("messages", JSONArray().apply {
                     if (systemPrompt != null) {
                         put(JSONObject().apply {
@@ -126,12 +137,13 @@ object LlmClient {
                             put("content", systemPrompt)
                         })
                     }
-                    messages.forEach { msg ->
+                    messages.filter { it.role != Role.THINKING && it.role != Role.ERROR }.forEach { msg ->
                         put(JSONObject().apply {
                             put("role", when(msg.role) {
                                 Role.USER -> "user"
                                 Role.ASSISTANT -> "assistant"
                                 Role.TOOL_CALL -> "assistant"
+                                Role.THINKING -> "assistant"
                                 else -> "user"
                             })
                             
@@ -223,8 +235,7 @@ object LlmClient {
                         if (end != -1) {
                             val jsonStr = currentBuffer.substring(start, end + 1)
                             currentBuffer = currentBuffer.substring(end + 1)
-                            val content = parseGoogleJson(jsonStr)
-                            if (content != null) emit(content)
+                            parseGoogleJson(jsonStr).forEach { emit(it) }
                         } else {
                             // Incomplete object, keep waiting
                             break
@@ -248,24 +259,38 @@ object LlmClient {
         }
     }
 
-    private fun parseGoogleJson(jsonStr: String): String? {
+    private fun parseGoogleJson(jsonStr: String): List<StreamChunk> {
         return try {
             val json = JSONObject(jsonStr)
-            val candidates = json.optJSONArray("candidates") ?: return null
-            if (candidates.length() == 0) return null
+            val candidates = json.optJSONArray("candidates") ?: return emptyList()
+            if (candidates.length() == 0) return emptyList()
             
-            val content = candidates.getJSONObject(0).optJSONObject("content") ?: return null
-            val parts = content.optJSONArray("parts") ?: return null
-            if (parts.length() == 0) return null
+            val content = candidates.getJSONObject(0).optJSONObject("content") ?: return emptyList()
+            val parts = content.optJSONArray("parts") ?: return emptyList()
+            if (parts.length() == 0) return emptyList()
             
-            val firstPart = parts.getJSONObject(0)
-            if (firstPart.has("text")) firstPart.getString("text") else null
+            val visible = StringBuilder()
+            val thinking = StringBuilder()
+            for (i in 0 until parts.length()) {
+                val part = parts.getJSONObject(i)
+                if (part.has("text")) {
+                    if (part.optBoolean("thought", false)) {
+                        thinking.append(part.getString("text"))
+                    } else {
+                        visible.append(part.getString("text"))
+                    }
+                }
+            }
+            buildList {
+                if (thinking.isNotBlank()) add(StreamChunk(thinking.toString(), isThinking = true))
+                if (visible.isNotBlank()) add(StreamChunk(visible.toString()))
+            }
         } catch (e: Exception) {
-            null
+            emptyList()
         }
     }
 
-    private fun parseStreamingLine(line: String, provider: ModelProvider): String? {
+    private fun parseStreamingLine(line: String, provider: ModelProvider): StreamChunk? {
         val trimmed = line.trim()
         if (trimmed.isBlank()) return null
         
@@ -279,15 +304,28 @@ object LlmClient {
                 val type = json.optString("type")
                 if (type == "content_block_delta") {
                     val delta = json.optJSONObject("delta")
-                    if (delta != null && delta.optString("type") == "text_delta") {
-                        delta.optString("text")
-                    } else null
+                    when (delta?.optString("type")) {
+                        "text_delta" -> StreamChunk(delta.optString("text"))
+                        "thinking_delta" -> StreamChunk(delta.optString("thinking"), isThinking = true)
+                        else -> null
+                    }
                 } else null
             } else { // OpenAI / OpenRouter
                 val choices = json.optJSONArray("choices")
                 if (choices == null || choices.length() == 0) return null
                 val delta = choices.getJSONObject(0).optJSONObject("delta")
-                if (delta != null && delta.has("content")) delta.getString("content") else null
+                if (delta == null) return null
+                val reasoning = when {
+                    delta.has("reasoning_content") -> delta.optString("reasoning_content")
+                    delta.has("reasoning") -> delta.optString("reasoning")
+                    delta.has("thinking") -> delta.optString("thinking")
+                    else -> ""
+                }
+                when {
+                    reasoning.isNotBlank() -> StreamChunk(reasoning, isThinking = true)
+                    delta.has("content") -> StreamChunk(delta.getString("content"))
+                    else -> null
+                }
             }
         } catch (e: Exception) {
             null
