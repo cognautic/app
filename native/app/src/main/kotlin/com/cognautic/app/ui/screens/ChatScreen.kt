@@ -250,6 +250,7 @@ fun ChatScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModelSelector(
     models: List<AiModel>,
@@ -356,6 +357,7 @@ fun ModelSelector(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatInput(
     value: String,
