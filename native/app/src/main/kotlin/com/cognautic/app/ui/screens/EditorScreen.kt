@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BorderStroke
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -91,7 +92,7 @@ fun EditorScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(bottom = Border(1.dp, Border))
+                    .border(BorderStroke(1.dp, Border))
             )
         }
     ) { padding ->
@@ -106,9 +107,9 @@ fun EditorScreen(
                 )
                 Box(modifier = Modifier
                     .fillMaxSize()
-                    .border(1.dp, Border)
+                    .border(BorderStroke(1.dp, Border))
                     .padding(8.dp)
-                    .background(SurfaceAlt)
+                    .background(SurfaceVariant)
                 ) {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         if (files.isEmpty()) {
@@ -145,9 +146,9 @@ fun EditorScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .border(1.dp, Border)
+                        .border(BorderStroke(1.dp, Border))
                         .padding(8.dp)
-                        .background(SurfaceAlt)
+                        .background(SurfaceVariant)
                 ) {
                     TextField(
                         value = editedContent,
@@ -160,9 +161,6 @@ fun EditorScreen(
                             color = TextPrimary
                         ),
                         colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
                             containerColor = Color.Transparent,
                             textColor = TextPrimary,
                             placeholderColor = TextMuted,
@@ -186,7 +184,7 @@ fun FileItem(name: String, isDir: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .background(
-                color = SurfaceAlt,
+                color = SurfaceVariant,
                 shape = RoundedCornerShape(0.dp)
             )
             .padding(vertical = 2.dp, horizontal = 4.dp),

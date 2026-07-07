@@ -276,8 +276,7 @@ fun ModelSelector(
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.outlinedButtonColors(
                 containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                outlineColor = MaterialTheme.colorScheme.outline
+                contentColor = MaterialTheme.colorScheme.onSurface
             )
         ) {
             Row(
@@ -315,8 +314,6 @@ fun ModelSelector(
                     .padding(8.dp),
                 singleLine = true,
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )

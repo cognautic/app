@@ -35,7 +35,6 @@ private val DarkColorScheme = darkColorScheme(
     inverseSurface = SurfaceElevated,
     inverseOnSurface = TextPrimary,
     inversePrimary = AccentPrimary.copy(alpha = 0.8f),
-    shadow = Color.Black,
     scrim = Color.Black,
     surfaceTint = AccentPrimary,
 )
@@ -68,7 +67,6 @@ private val LightColorScheme = lightColorScheme(
     inverseSurface = Surface,
     inverseOnSurface = TextPrimary,
     inversePrimary = AccentPrimary,
-    shadow = Color.Black,
     scrim = Color.Black,
     surfaceTint = AccentPrimary,
 )
