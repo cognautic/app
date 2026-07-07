@@ -412,9 +412,7 @@ fun ChatInput(
                         .heightIn(min = 48.dp, max = 160.dp),
                     placeholder = { Text("> MESSAGE COGNAUTIC") },
                     colors = TextFieldDefaults.textFieldColors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
+                        containerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         cursorColor = MaterialTheme.colorScheme.primary

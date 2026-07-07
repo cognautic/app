@@ -326,24 +326,28 @@ class GrepSearchTool(private val workspaceRoot: String) : AgentTool {
             var matchCount = 0
             val maxMatches = 100
             
-            searchDir.walk().forEach { file ->
+            for (file in searchDir.walk()) {
                 if (file.isFile && !isFileToExclude(file)) {
                     try {
                         var lineNumber = 0
-                        file.forEachLine { line ->
+                        val lines = file.readLines()
+                        for (line in lines) {
                             lineNumber++
                             if (line.contains(query, ignoreCase = true)) {
                                 val relPath = file.relativeTo(File(workspaceRoot)).path
                                 results.add("$relPath:$lineNumber: $line")
                                 matchCount++
                                 if (matchCount >= maxMatches) {
-                                    return@forEach
+                                    break
                                 }
                             }
                         }
                     } catch (e: Exception) {
                         // Skip binary or unreadable files
                     }
+                }
+                if (matchCount >= maxMatches) {
+                    break
                 }
             }
             

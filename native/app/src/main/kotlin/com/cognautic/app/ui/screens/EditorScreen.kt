@@ -161,8 +161,10 @@ fun EditorScreen(
                         ),
                         colors = TextFieldDefaults.textFieldColors(
                             containerColor = Color.Transparent,
-                            textColor = TextPrimary,
-                            placeholderColor = TextMuted,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedPlaceholderColor = TextMuted,
+                            unfocusedPlaceholderColor = TextMuted,
                             cursorColor = AccentPrimary
                         ),
                         placeholder = { Text("[ EMPTY FILE ]", color = TextMuted) },
