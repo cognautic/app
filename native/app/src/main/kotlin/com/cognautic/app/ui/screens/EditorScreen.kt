@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.BorderStroke
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -92,7 +91,7 @@ fun EditorScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Border))
+                    .border(1.dp, Border)
             )
         }
     ) { padding ->
@@ -107,7 +106,7 @@ fun EditorScreen(
                 )
                 Box(modifier = Modifier
                     .fillMaxSize()
-                    .border(BorderStroke(1.dp, Border))
+                    .border(1.dp, Border)
                     .padding(8.dp)
                     .background(SurfaceVariant)
                 ) {
@@ -146,7 +145,7 @@ fun EditorScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .border(BorderStroke(1.dp, Border))
+                        .border(1.dp, Border)
                         .padding(8.dp)
                         .background(SurfaceVariant)
                 ) {
@@ -160,7 +159,7 @@ fun EditorScreen(
                             lineHeight = 18.sp,
                             color = TextPrimary
                         ),
-                        colors = TextFieldDefaults.colors(
+                        colors = TextFieldDefaults.textFieldColors(
                             containerColor = Color.Transparent,
                             textColor = TextPrimary,
                             placeholderColor = TextMuted,
