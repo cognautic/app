@@ -458,12 +458,7 @@ fun MessageBubble(
         contentAlignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
     ) {
         Surface(
-            shape = RoundedCornerShape(
-                topStart = 2.dp,
-                topEnd = 2.dp,
-                bottomStart = if (isUser) 2.dp else 0.dp,
-                bottomEnd = if (isUser) 0.dp else 2.dp
-            ),
+            shape = androidx.compose.ui.graphics.RectangleShape,
             color = when {
                 isUser -> MaterialTheme.colorScheme.primary
                 isError -> MaterialTheme.colorScheme.errorContainer
@@ -523,7 +518,7 @@ fun MessageBubble(
                              Box(
                                  modifier = Modifier
                                      .size(8.dp)
-                                     .background(color, androidx.compose.foundation.shape.CircleShape)
+                                     .background(color, androidx.compose.ui.graphics.RectangleShape)
                              )
                              Spacer(modifier = Modifier.width(8.dp))
                         }
@@ -592,7 +587,7 @@ fun MessageBubble(
 @Composable
 fun AttachmentThumbnail(attachment: Attachment, onRemove: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(2.dp),
+        shape = androidx.compose.ui.graphics.RectangleShape,
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.size(56.dp)
     ) {
@@ -623,7 +618,7 @@ fun AttachmentThumbnail(attachment: Attachment, onRemove: () -> Unit) {
 @Composable
 fun AttachmentBubble(attachment: Attachment) {
     Surface(
-        shape = RoundedCornerShape(2.dp),
+        shape = androidx.compose.ui.graphics.RectangleShape,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         modifier = Modifier.padding(vertical = 2.dp)
     ) {

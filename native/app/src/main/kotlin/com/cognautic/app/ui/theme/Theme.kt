@@ -4,25 +4,36 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+
+private val SquaryShapes = Shapes(
+    extraSmall = RoundedCornerShape(0.dp),
+    small = RoundedCornerShape(0.dp),
+    medium = RoundedCornerShape(0.dp),
+    large = RoundedCornerShape(0.dp),
+    extraLarge = RoundedCornerShape(0.dp)
+)
 
 private val DarkColorScheme = darkColorScheme(
     primary = AccentPrimary,
     onPrimary = TextInverse,
-    primaryContainer = AccentPrimary.copy(alpha = 0.12f),
-    onPrimaryContainer = AccentPrimary,
+    primaryContainer = SurfaceVariant,
+    onPrimaryContainer = TextPrimary,
     secondary = AccentSecondary,
     onSecondary = TextInverse,
-    secondaryContainer = AccentSecondary.copy(alpha = 0.12f),
-    onSecondaryContainer = AccentSecondary,
+    secondaryContainer = SurfaceElevated,
+    onSecondaryContainer = TextSecondary,
     tertiary = AccentAccent,
     onTertiary = TextInverse,
-    tertiaryContainer = AccentAccent.copy(alpha = 0.12f),
-    onTertiaryContainer = AccentAccent,
+    tertiaryContainer = Surface,
+    onTertiaryContainer = TextSecondary,
     error = AccentError,
     onError = TextInverse,
-    errorContainer = AccentError.copy(alpha = 0.12f),
+    errorContainer = AccentError.copy(alpha = 0.15f),
     onErrorContainer = AccentError,
     background = Background,
     onBackground = TextPrimary,
@@ -39,34 +50,36 @@ private val DarkColorScheme = darkColorScheme(
     surfaceTint = AccentPrimary,
 )
 
+// We make LightColorScheme also a terminal/gray theme, just slightly different tones or same to stay fully dark-mode minimal terminal.
+// Let's make it a clean medium-gray terminal design.
 private val LightColorScheme = lightColorScheme(
-    primary = AccentPrimary.copy(alpha = 0.8f),
+    primary = AccentPrimary,
     onPrimary = TextInverse,
-    primaryContainer = AccentPrimary.copy(alpha = 0.12f),
-    onPrimaryContainer = AccentPrimary.copy(alpha = 0.8f),
-    secondary = AccentSecondary.copy(alpha = 0.8f),
+    primaryContainer = SurfaceVariant,
+    onPrimaryContainer = TextPrimary,
+    secondary = AccentSecondary,
     onSecondary = TextInverse,
-    secondaryContainer = AccentSecondary.copy(alpha = 0.12f),
-    onSecondaryContainer = AccentSecondary.copy(alpha = 0.8f),
-    tertiary = AccentAccent.copy(alpha = 0.8f),
+    secondaryContainer = SurfaceElevated,
+    onSecondaryContainer = TextSecondary,
+    tertiary = AccentAccent,
     onTertiary = TextInverse,
-    tertiaryContainer = AccentAccent.copy(alpha = 0.12f),
-    onTertiaryContainer = AccentAccent.copy(alpha = 0.8f),
+    tertiaryContainer = Surface,
+    onTertiaryContainer = TextSecondary,
     error = AccentError,
     onError = TextInverse,
-    errorContainer = AccentError.copy(alpha = 0.12f),
+    errorContainer = AccentError.copy(alpha = 0.15f),
     onErrorContainer = AccentError,
-    background = Color(0xFFE0E0E0),
-    onBackground = TextPrimaryLight,
-    surface = Color(0xFFFFFFFF),
-    onSurface = TextPrimaryLight,
-    surfaceVariant = Color(0xFFE0E0E0),
-    onSurfaceVariant = TextSecondaryLight,
-    outline = BorderLight.copy(alpha = 0.6f),
-    outlineVariant = BorderLight.copy(alpha = 0.4f),
-    inverseSurface = Surface,
+    background = BackgroundAlt,
+    onBackground = TextPrimary,
+    surface = Surface,
+    onSurface = TextPrimary,
+    surfaceVariant = SurfaceVariant,
+    onSurfaceVariant = TextSecondary,
+    outline = Border,
+    outlineVariant = BorderLight,
+    inverseSurface = SurfaceElevated,
     inverseOnSurface = TextPrimary,
-    inversePrimary = AccentPrimary,
+    inversePrimary = AccentPrimary.copy(alpha = 0.8f),
     scrim = Color.Black,
     surfaceTint = AccentPrimary,
 )
@@ -81,6 +94,7 @@ fun CognauticTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = SquaryShapes,
         content = content
     )
 }

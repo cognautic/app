@@ -325,7 +325,7 @@ fun WorkspaceItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
+                shape = androidx.compose.ui.graphics.RectangleShape,
                 color = if (isActive) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -374,7 +374,7 @@ fun WorkspaceItem(
                     modifier = Modifier
                         .size(10.dp)
                         .graphicsLayer(alpha = alpha)
-                        .background(MaterialTheme.colorScheme.primary, androidx.compose.foundation.shape.CircleShape)
+                        .background(MaterialTheme.colorScheme.primary, androidx.compose.ui.graphics.RectangleShape)
                 )
             }
         }

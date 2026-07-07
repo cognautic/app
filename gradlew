@@ -116,6 +116,11 @@ esac
 
 
 
+# Force Java 21 on environments that have it to avoid compatibility issues with Java 25.
+if [ -d "/usr/local/sdkman/candidates/java/21.0.10-ms" ]; then
+    export JAVA_HOME="/usr/local/sdkman/candidates/java/21.0.10-ms"
+fi
+
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then

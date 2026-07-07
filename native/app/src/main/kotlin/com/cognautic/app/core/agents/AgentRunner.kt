@@ -38,7 +38,8 @@ class AgentRunner(private val context: android.content.Context, private val work
             ${if (workspaceRules.isNotBlank()) "WS-RULES:\n$workspaceRules\n" else ""}
 
             INSTRUCTIONS:
-            - Use 'list_files' to explore, 'read_file' to read, 'write_file' to create/modify
+            - Use 'grep_search' to find text patterns, 'list_files' to explore
+            - Use 'read_file' to read, 'write_file' to create/modify files
             - Use 'replace_content' for precise edits, 'apply_edits' for multiple changes
             - Use 'run_command' for shell commands, tests, builds
             - Prefer small steps: inspect before editing, verify after

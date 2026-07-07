@@ -131,10 +131,11 @@ fun CognauticApp() {
                                 exit = slideOutVertically() + fadeOut()
                             ) {
                                 Surface(
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = androidx.compose.ui.graphics.RectangleShape,
                                     color = MaterialTheme.colorScheme.errorContainer,
-                                    tonalElevation = 8.dp,
-                                    shadowElevation = 4.dp
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                                    tonalElevation = 0.dp,
+                                    shadowElevation = 0.dp
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(16.dp),

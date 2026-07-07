@@ -2,34 +2,34 @@ package com.cognautic.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val TerminalGreen = Color(0xFF8CC84B)
-val TerminalGreenDim = Color(0xFF6BA038)
-val TerminalRed = Color(0xFFFF6B6B)
-val TerminalYellow = Color(0xFFFFD700)
-val TerminalBlue = Color(0xFF7AA2F7)
-val TerminalCyan = Color(0xFF86E1FC)
-val TerminalPurple = Color(0xFFC099FF)
-val TerminalOrange = Color(0xFFFF966C)
+val TerminalGreen = Color(0xFF00FF00)
+val TerminalGreenDim = Color(0xFF00AA00)
+val TerminalRed = Color(0xFFFF5555)
+val TerminalYellow = Color(0xFFFFBB00)
+val TerminalBlue = Color(0xFF5555FF)
+val TerminalCyan = Color(0xFF55FFFF)
+val TerminalPurple = Color(0xFFFF55FF)
+val TerminalOrange = Color(0xFFFF9900)
 
-val Background = Color(0xFF1E1E1E)
-val BackgroundAlt = Color(0xFF181818)
-val Surface = Color(0xFF252526)
-val SurfaceElevated = Color(0xFF2D2D2D)
-val SurfaceVariant = Color(0xFF333333)
-val Border = Color(0xFF3E3E42)
-val BorderLight = Color(0xFF2D2D2D)
+val Background = Color(0xFF161616)
+val BackgroundAlt = Color(0xFF1F1F1F)
+val Surface = Color(0xFF222222)
+val SurfaceElevated = Color(0xFF2C2C2C)
+val SurfaceVariant = Color(0xFF2E2E2E)
+val Border = Color(0xFF444444)
+val BorderLight = Color(0xFF333333)
 
-val TextPrimary = Color(0xFFCCCCCC)
-val TextSecondary = Color(0xFF969696)
-val TextMuted = Color(0xFF6A6A6A)
-val TextInverse = Color(0xFF1E1E1E)
+val TextPrimary = Color(0xFFE0E0E0)
+val TextSecondary = Color(0xFFAAAAAA)
+val TextMuted = Color(0xFF666666)
+val TextInverse = Color(0xFF161616)
 
-val AccentPrimary = TerminalGreen
-val AccentSecondary = TerminalBlue
+val AccentPrimary = Color(0xFFCCCCCC)
+val AccentSecondary = Color(0xFF888888)
 val AccentWarning = TerminalYellow
 val AccentError = TerminalRed
 val AccentInfo = TerminalCyan
-val AccentAccent = TerminalPurple
+val AccentAccent = Color(0xFF777777)
 
 val PrimaryAccent = AccentPrimary
 val SecondaryAccent = AccentSecondary
@@ -40,5 +40,5 @@ val SurfaceDark = Surface
 val Black = Color(0xFF000000)
 val White = Color(0xFFFFFFFF)
 
-val TextPrimaryLight = Color(0xFF1E1E1E)
-val TextSecondaryLight = Color(0xFF565F89)
+val TextPrimaryLight = Color(0xFF161616)
+val TextSecondaryLight = Color(0xFF444444)

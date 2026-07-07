@@ -306,6 +306,78 @@ class ApplyEditsTool(private val context: Context, private val workspaceRoot: St
     }
 }
 
+class GrepSearchTool(private val workspaceRoot: String) : AgentTool {
+    override val name = "grep_search"
+    override val description = "Search for a text pattern recursively in workspace files, excluding build, gradle, and git directories."
+
+    override fun execute(args: Map<String, String>): String {
+        val query = args["query"] ?: return "Error: Missing query argument"
+        val path = args["path"] ?: ""
+        
+        if (workspaceRoot.startsWith("content://")) {
+            return "Error: Grep search is not supported for content:// workspaces."
+        }
+        
+        val searchDir = if (path.isEmpty()) File(workspaceRoot) else File(File(workspaceRoot), path)
+        if (!searchDir.exists()) return "Error: Path '$path' not found."
+        
+        return try {
+            val results = mutableListOf<String>()
+            var matchCount = 0
+            val maxMatches = 100
+            
+            searchDir.walk().forEach { file ->
+                if (file.isFile && !isFileToExclude(file)) {
+                    try {
+                        var lineNumber = 0
+                        file.forEachLine { line ->
+                            lineNumber++
+                            if (line.contains(query, ignoreCase = true)) {
+                                val relPath = file.relativeTo(File(workspaceRoot)).path
+                                results.add("$relPath:$lineNumber: $line")
+                                matchCount++
+                                if (matchCount >= maxMatches) {
+                                    return@forEach
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Skip binary or unreadable files
+                    }
+                }
+            }
+            
+            if (results.isEmpty()) {
+                "No matches found for '$query'."
+            } else {
+                val suffix = if (matchCount >= maxMatches) "\n... (truncated to $maxMatches matches)" else ""
+                results.joinToString("\n") + suffix
+            }
+        } catch (e: Exception) {
+            "Error performing search: ${e.message}"
+        }
+    }
+
+    private fun isFileToExclude(file: File): Boolean {
+        val path = file.path
+        return path.contains("/.git/") || 
+               path.contains("/.gradle/") || 
+               path.contains("/build/") || 
+               path.contains("/node_modules/") || 
+               file.name.endsWith(".png") || 
+               file.name.endsWith(".jpg") || 
+               file.name.endsWith(".gif") || 
+               file.name.endsWith(".zip") || 
+               file.name.endsWith(".apk") || 
+               file.name.endsWith(".class") || 
+               file.name.endsWith(".jar")
+    }
+
+    override fun getDefinition(): String {
+        return """{"name":"grep_search","description":"Search for text pattern recursively in workspace","parameters":{"type":"object","properties":{"query":{"type":"string","description":"The text pattern to search for"},"path":{"type":"string","description":"Optional relative subdirectory path to search within"}},"required":["query"]}}"""
+    }
+}
+
 // Simple Registry
 class ToolRegistry(context: Context, workspacePath: String) {
     val tools = listOf(
@@ -314,6 +386,7 @@ class ToolRegistry(context: Context, workspacePath: String) {
         WriteFileTool(context, workspacePath),
         ReplaceContentTool(context, workspacePath),
         ApplyEditsTool(context, workspacePath),
+        GrepSearchTool(workspacePath),
         RunCommandTool(workspacePath),
         WebSearchTool(),
         ReadUrlTool()
