@@ -170,34 +170,43 @@ fun ChatScreen(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             if (!isEmptyState || isLoading) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .border(1.dp, Border)
+                        .background(SurfaceVariant)
+                        .padding(8.dp)
                 ) {
-                    itemsIndexed(messages) { index, message ->
-                        if (message.isVisible && (message.role != Role.THINKING || showThinking)) {
-                            val previousVisibleMessage = messages
-                                .take(index)
-                                .lastOrNull { it.isVisible && it.role != Role.THINKING }
-                            val showLabel = previousVisibleMessage == null || previousVisibleMessage.role == Role.USER
-                            MessageBubble(
-                                message = message,
-                                showLabel = showLabel,
-                                isPending = pendingTool?.id == message.id,
-                                onApproval = { viewModel.onToolApproval(it) }
-                            )
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        itemsIndexed(messages) { index, message ->
+                            if (message.isVisible && (message.role != Role.THINKING || showThinking)) {
+                                val previousVisibleMessage = messages
+                                    .take(index)
+                                    .lastOrNull { it.isVisible && it.role != Role.THINKING }
+                                val showLabel = previousVisibleMessage == null || previousVisibleMessage.role == Role.USER
+                                MessageBubble(
+                                    message = message,
+                                    showLabel = showLabel,
+                                    isPending = pendingTool?.id == message.id,
+                                    onApproval = { viewModel.onToolApproval(it) }
+                                )
+                            }
                         }
-                    }
-                    if (isLoading) {
-                        item {
-                            Text(
-                                "[ PROCESSING... ]",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
-                            )
+                        if (isLoading) {
+                            item {
+                                Text(
+                                    "[ PROCESSING... ]",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 12.dp, top = 4.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -215,21 +224,13 @@ fun ChatScreen(
                 ) {
                     AnimatedVisibility(visible = isEmptyState, enter = fadeIn(), exit = fadeOut()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Surface(
-                                shape = RoundedCornerShape(2.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                tonalElevation = 0.dp
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.logo),
-                                    contentDescription = "Logo",
-                                    modifier = Modifier
-                                        .size(88.dp)
-                                        .padding(12.dp)
-                                        .clip(RoundedCornerShape(2.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
+                            Box(
+                                modifier = Modifier
+                                    .width(48.dp)
+                                    .height(96.dp)
+                                    .background(Color.White)
+                                    .border(4.dp, Color.Black)
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 "COGNAUTIC",
@@ -272,29 +273,26 @@ fun ModelSelector(
     }
 
     Box {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true }
+                .background(SurfaceVariant, androidx.compose.ui.graphics.RectangleShape)
+                .border(1.dp, Border, androidx.compose.ui.graphics.RectangleShape)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = selectedModel?.name ?: "SELECT MODEL",
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Memory, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Select model")
-                }
+            Text(
+                text = selectedModel?.name?.uppercase() ?: "SELECT MODEL",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Memory, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
+                Spacer(modifier = Modifier.width(6.dp))
+                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select model", tint = TextSecondary)
             }
         }
 
@@ -302,7 +300,8 @@ fun ModelSelector(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
+                .background(Surface)
+                .border(1.dp, Border)
                 .width(320.dp)
                 .heightIn(max = 400.dp)
         ) {
@@ -315,11 +314,11 @@ fun ModelSelector(
                     .padding(8.dp),
                 singleLine = true,
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = Surface
                 )
             )
             
-            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            Divider(color = Border.copy(alpha = 0.3f))
 
             if (models.isEmpty()) {
                  DropdownMenuItem(
@@ -333,7 +332,7 @@ fun ModelSelector(
                             Text(
                                 text = providerName.uppercase(), 
                                 style = MaterialTheme.typography.labelSmall, 
-                                color = MaterialTheme.colorScheme.primary
+                                color = AccentPrimary
                             ) 
                         },
                         onClick = { },
@@ -342,7 +341,7 @@ fun ModelSelector(
                     
                     providerModels.forEach { model ->
                         DropdownMenuItem(
-                            text = { Text(model.name, style = MaterialTheme.typography.bodyMedium) },
+                            text = { Text(model.name.uppercase(), style = MaterialTheme.typography.bodyMedium) },
                             onClick = {
                                 onModelSelected(model)
                                 expanded = false
@@ -350,7 +349,7 @@ fun ModelSelector(
                             }
                         )
                     }
-                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    Divider(color = Border.copy(alpha = 0.1f))
                 }
             }
         }

@@ -111,81 +111,91 @@ fun WorkspaceScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (workspaces.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.Folder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            "No workspaces yet",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            "Tap + to pick a folder.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 96.dp)
-                ) {
-                    items(workspaces) { workspace ->
-                        Box {
-                            WorkspaceItem(
-                                workspace = workspace,
-                                isActive = activeWorkspaces.contains(workspace.id),
-                                onClick = {
-                                    viewModel.onWorkspaceSelected(workspace)
-                                    onWorkspaceSelected()
-                                },
-                                onLongClick = {
-                                    selectedWorkspaceForMenu = workspace
-                                }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .border(1.dp, Border)
+                    .padding(8.dp)
+                    .background(SurfaceVariant)
+            ) {
+                if (workspaces.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.Folder,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(48.dp)
                             )
-                            
-                            DropdownMenu(
-                                expanded = selectedWorkspaceForMenu == workspace,
-                                onDismissRequest = { selectedWorkspaceForMenu = null }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Rename") },
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                "No workspaces yet",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                "Tap + to pick a folder.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(workspaces) { workspace ->
+                            Box {
+                                WorkspaceItem(
+                                    workspace = workspace,
+                                    isActive = activeWorkspaces.contains(workspace.id),
                                     onClick = {
-                                        workspaceToRename = workspace
-                                        selectedWorkspaceForMenu = null
+                                        viewModel.onWorkspaceSelected(workspace)
+                                        onWorkspaceSelected()
+                                    },
+                                    onLongClick = {
+                                        selectedWorkspaceForMenu = workspace
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("Rules") },
-                                    onClick = {
-                                        workspaceToEditRules = workspace
-                                        selectedWorkspaceForMenu = null
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
-                                    onClick = {
-                                        workspaceToDelete = workspace
-                                        selectedWorkspaceForMenu = null
-                                    }
-                                )
+                                
+                                DropdownMenu(
+                                    expanded = selectedWorkspaceForMenu == workspace,
+                                    onDismissRequest = { selectedWorkspaceForMenu = null },
+                                    modifier = Modifier.background(Surface).border(1.dp, Border)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Rename") },
+                                        onClick = {
+                                            workspaceToRename = workspace
+                                            selectedWorkspaceForMenu = null
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Rules") },
+                                        onClick = {
+                                            workspaceToEditRules = workspace
+                                            selectedWorkspaceForMenu = null
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                                        onClick = {
+                                            workspaceToDelete = workspace
+                                            selectedWorkspaceForMenu = null
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
@@ -301,82 +311,49 @@ fun WorkspaceItem(
         )
     )
 
-    ElevatedCard(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
-            ),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
+            )
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .background(
+                color = if (isActive) MaterialTheme.colorScheme.primaryContainer else Surface,
+                shape = androidx.compose.ui.graphics.RectangleShape
+            )
+            .border(1.dp, if (isActive) AccentPrimary else Border, androidx.compose.ui.graphics.RectangleShape)
+            .padding(vertical = 10.dp, horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = androidx.compose.ui.graphics.RectangleShape,
-                color = if (isActive) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.primaryContainer
-                }
-            ) {
-                Icon(
-                    Icons.Default.Folder,
-                    contentDescription = null,
-                    tint = if (isActive) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    },
-                    modifier = Modifier.padding(10.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = workspace.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isActive) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Text(
-                    text = workspace.path,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isActive) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f)
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-            }
-            if (isActive) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .graphicsLayer(alpha = alpha)
-                        .background(MaterialTheme.colorScheme.primary, androidx.compose.ui.graphics.RectangleShape)
-                )
-            }
+        Text(
+            text = if (isActive) "[WS*] " else "[WS]  ",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isActive) AccentPrimary else TextMuted
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = workspace.name.uppercase(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextPrimary
+            )
+            Text(
+                text = workspace.path,
+                style = MaterialTheme.typography.labelSmall,
+                color = TextSecondary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+        if (isActive) {
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .graphicsLayer(alpha = alpha)
+                    .background(MaterialTheme.colorScheme.primary, androidx.compose.ui.graphics.RectangleShape)
+            )
         }
     }
 }
