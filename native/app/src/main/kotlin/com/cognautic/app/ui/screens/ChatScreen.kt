@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import com.cognautic.app.R
 import com.cognautic.app.core.models.*
 import com.cognautic.app.ui.chat.ChatViewModel
+import com.cognautic.app.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,13 +97,13 @@ fun ChatScreen(
                 title = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = workspace?.name ?: "Cognautic",
+                            text = workspace?.name ?: "COGNAUTIC",
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1
                         )
                         if (workspace != null) {
                             Text(
-                                text = "Coding agent",
+                                text = "[ CODING AGENT ]",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1
@@ -132,8 +134,8 @@ fun ChatScreen(
         },
         bottomBar = {
             Surface(
-                tonalElevation = 3.dp,
-                shadowElevation = 8.dp,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
@@ -147,7 +149,7 @@ fun ChatScreen(
                         selectedModel = selectedModel,
                         onModelSelected = { viewModel.onModelSelected(it) }
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     ChatInput(
                         value = input,
                         onValueChange = { viewModel.onInputChange(it) },
@@ -172,7 +174,7 @@ fun ChatScreen(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     itemsIndexed(messages) { index, message ->
                         if (message.isVisible && (message.role != Role.THINKING || showThinking)) {
@@ -191,7 +193,7 @@ fun ChatScreen(
                     if (isLoading) {
                         item {
                             Text(
-                                "Working...",
+                                "[ PROCESSING... ]",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(start = 12.dp, top = 4.dp)
@@ -214,9 +216,9 @@ fun ChatScreen(
                     AnimatedVisibility(visible = isEmptyState, enter = fadeIn(), exit = fadeOut()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Surface(
-                                shape = RoundedCornerShape(24.dp),
+                                shape = RoundedCornerShape(2.dp),
                                 color = MaterialTheme.colorScheme.primaryContainer,
-                                tonalElevation = 2.dp
+                                tonalElevation = 0.dp
                             ) {
                                 Image(
                                     painter = painterResource(id = R.drawable.logo),
@@ -224,19 +226,19 @@ fun ChatScreen(
                                     modifier = Modifier
                                         .size(88.dp)
                                         .padding(12.dp)
-                                        .clip(RoundedCornerShape(18.dp)),
+                                        .clip(RoundedCornerShape(2.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                             }
-                            Spacer(modifier = Modifier.height(20.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                "Cognautic",
+                                "COGNAUTIC",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                "Ask for a coding task in this workspace",
+                                "> SELECT WORKSPACE TO BEGIN",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -264,52 +266,66 @@ fun ModelSelector(
             it.name.contains(searchQuery, ignoreCase = true) || 
             it.id.contains(searchQuery, ignoreCase = true)
         }.groupBy { 
-            providers.find { p -> p.id == it.providerId }?.name ?: "Unknown"
+            providers.find { p -> p.id == it.providerId }?.name ?: "UNKNOWN"
         }
     }
 
     Box {
-        AssistChip(
+        OutlinedButton(
             onClick = { expanded = true },
-            label = {
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                outlineColor = MaterialTheme.colorScheme.outline
+            )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = selectedModel?.name ?: "Select model",
+                    text = selectedModel?.name ?: "SELECT MODEL",
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-            },
-            leadingIcon = {
-                Icon(Icons.Default.Memory, contentDescription = null, modifier = Modifier.size(18.dp))
-            },
-            trailingIcon = {
-                Icon(Icons.Default.ArrowDropDown, contentDescription = "Select model")
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Memory, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Select model")
+                }
+            }
+        }
 
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.surface)
-                .width(300.dp)
+                .width(320.dp)
                 .heightIn(max = 400.dp)
         ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search models...") },
+                placeholder = { Text("SEARCH MODELS...") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
-                singleLine = true
+                singleLine = true,
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
             
-            Divider()
+            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
             if (models.isEmpty()) {
                  DropdownMenuItem(
-                    text = { Text("No models. Add API Key in Settings.") },
+                    text = { Text("NO MODELS. ADD API KEY IN SETTINGS.") },
                     onClick = { expanded = false }
                 )
             } else {
@@ -317,7 +333,7 @@ fun ModelSelector(
                     DropdownMenuItem(
                         text = { 
                             Text(
-                                text = providerName, 
+                                text = providerName.uppercase(), 
                                 style = MaterialTheme.typography.labelSmall, 
                                 color = MaterialTheme.colorScheme.primary
                             ) 
@@ -372,16 +388,16 @@ fun ChatInput(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
-                    shape = RoundedCornerShape(28.dp)
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(2.dp)
             ),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+            shape = RoundedCornerShape(2.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 4.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
                 IconButton(onClick = onUploadClick) {
@@ -396,16 +412,18 @@ fun ChatInput(
                     onValueChange = onValueChange,
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 56.dp, max = 160.dp),
-                    placeholder = { Text("Message Cognautic") },
+                        .heightIn(min = 48.dp, max = 160.dp),
+                    placeholder = { Text("> MESSAGE COGNAUTIC") },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = MaterialTheme.colorScheme.primary
                     ),
-                    maxLines = 8
+                    maxLines = 8,
+                    textStyle = MaterialTheme.typography.bodyMedium
                 )
                 FilledIconButton(
                     onClick = onAction,
@@ -417,7 +435,7 @@ fun ChatInput(
                     if (isLoading) {
                         Icon(Icons.Default.Stop, contentDescription = "Stop")
                     } else {
-                        Icon(Icons.Default.ArrowUpward, contentDescription = "Send")
+                        Icon(Icons.Default.Send, contentDescription = "Send")
                     }
                 }
             }
@@ -444,10 +462,10 @@ fun MessageBubble(
     ) {
         Surface(
             shape = RoundedCornerShape(
-                topStart = 22.dp,
-                topEnd = 22.dp,
-                bottomStart = if (isUser) 22.dp else 6.dp,
-                bottomEnd = if (isUser) 6.dp else 22.dp
+                topStart = 2.dp,
+                topEnd = 2.dp,
+                bottomStart = if (isUser) 2.dp else 0.dp,
+                bottomEnd = if (isUser) 0.dp else 2.dp
             ),
             color = when {
                 isUser -> MaterialTheme.colorScheme.primary
@@ -456,8 +474,8 @@ fun MessageBubble(
                 isThinking -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                 else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
             },
-            tonalElevation = if (isUser) 0.dp else 1.dp,
-            modifier = Modifier.widthIn(max = 520.dp)
+            tonalElevation = 0.dp,
+            modifier = Modifier.widthIn(max = 600.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (isThinking) {
@@ -470,21 +488,21 @@ fun MessageBubble(
                         Icon(
                             imageVector = if (isThinkingExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                             contentDescription = if (isThinkingExpanded) "Collapse thinking" else "Expand thinking",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Thinking",
+                            text = "THINKING",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                     AnimatedVisibility(visible = isThinkingExpanded) {
                         Text(
                             text = message.content,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }
@@ -502,8 +520,8 @@ fun MessageBubble(
                              val color = when (message.toolStatus) {
                                  ToolStatus.PENDING -> Color(0xFF8A8A8A)
                                  ToolStatus.EXECUTING -> MaterialTheme.colorScheme.primary
-                                 ToolStatus.DONE -> Color(0xFFCFCFCF)
-                                 ToolStatus.FAILED -> Color(0xFF4A4A4A)
+                                 ToolStatus.DONE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                 ToolStatus.FAILED -> MaterialTheme.colorScheme.error
                              }
                              Box(
                                  modifier = Modifier
@@ -543,7 +561,7 @@ fun MessageBubble(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                                 .padding(8.dp)
                         ) {
                             message.toolData.forEach { (k, v) ->
@@ -560,11 +578,11 @@ fun MessageBubble(
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 TextButton(onClick = { onApproval(false) }) {
-                                    Text("Reject", color = MaterialTheme.colorScheme.error)
+                                    Text("REJECT", color = MaterialTheme.colorScheme.error)
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Button(onClick = { onApproval(true) }) {
-                                    Text("Approve")
+                                    Text("APPROVE")
                                 }
                             }
                         }
@@ -577,9 +595,9 @@ fun MessageBubble(
 @Composable
 fun AttachmentThumbnail(attachment: Attachment, onRemove: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(2.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.size(60.dp)
+        modifier = Modifier.size(56.dp)
     ) {
         Box {
              Column(
@@ -587,7 +605,7 @@ fun AttachmentThumbnail(attachment: Attachment, onRemove: () -> Unit) {
                  horizontalAlignment = Alignment.CenterHorizontally,
                  verticalArrangement = Arrangement.Center
              ) {
-                 Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(24.dp))
+                 Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp))
                  Text(
                      text = attachment.name,
                      style = MaterialTheme.typography.labelSmall,
@@ -608,7 +626,7 @@ fun AttachmentThumbnail(attachment: Attachment, onRemove: () -> Unit) {
 @Composable
 fun AttachmentBubble(attachment: Attachment) {
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(2.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         modifier = Modifier.padding(vertical = 2.dp)
     ) {

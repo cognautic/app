@@ -145,19 +145,7 @@ class ListFilesTool(private val context: Context, private val workspaceRoot: Str
     }
 
     override fun getDefinition(): String {
-        return """
-        {
-            "name": "list_files",
-            "description": "List files in a directory",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": { "type": "string", "description": "Relative path to directory" }
-                },
-                "required": ["path"]
-            }
-        }
-        """.trimIndent()
+        return """{"name":"list_files","description":"List files in directory","parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}"""
     }
 }
 
@@ -180,19 +168,7 @@ class ReadFileTool(private val context: Context, private val workspaceRoot: Stri
     }
 
     override fun getDefinition(): String {
-         return """
-        {
-            "name": "read_file",
-            "description": "Read file contents",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": { "type": "string", "description": "Relative path to file" }
-                },
-                "required": ["path"]
-            }
-        }
-        """.trimIndent()
+         return """{"name":"read_file","description":"Read file contents","parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}"""
     }
 }
 
@@ -230,20 +206,7 @@ class WriteFileTool(private val context: Context, private val workspaceRoot: Str
     }
 
     override fun getDefinition(): String {
-         return """
-        {
-            "name": "write_file",
-            "description": "Write text to a file",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": { "type": "string", "description": "Relative path to file" },
-                    "content": { "type": "string", "description": "Text content to write" }
-                },
-                "required": ["path", "content"]
-            }
-        }
-        """.trimIndent()
+         return """{"name":"write_file","description":"Write text to file","parameters":{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"}},"required":["path","content"]}}"""
     }
 }
 
@@ -295,21 +258,7 @@ class ReplaceContentTool(private val context: Context, private val workspaceRoot
     }
 
     override fun getDefinition(): String {
-        return """
-        {
-            "name": "replace_content",
-            "description": "Replace text in file",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": { "type": "string", "description": "Relative path to file" },
-                    "old_content": { "type": "string", "description": "The exact block of text to be replaced" },
-                    "new_content": { "type": "string", "description": "The new text content" }
-                },
-                "required": ["path", "old_content", "new_content"]
-            }
-        }
-        """.trimIndent()
+        return """{"name":"replace_content","description":"Replace text in file","parameters":{"type":"object","properties":{"path":{"type":"string"},"old_content":{"type":"string"},"new_content":{"type":"string"}},"required":["path","old_content","new_content"]}}"""
     }
 }
 
@@ -353,23 +302,7 @@ class ApplyEditsTool(private val context: Context, private val workspaceRoot: St
     }
 
     override fun getDefinition(): String {
-        return """
-        {
-            "name": "apply_edits",
-            "description": "Apply search-and-replace edits",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": { "type": "string", "description": "Relative path to file" },
-                    "edits": { 
-                        "type": "string", 
-                        "description": "JSON array of objects with 'old_content' and 'new_content' fields"
-                    }
-                },
-                "required": ["path", "edits"]
-            }
-        }
-        """.trimIndent()
+        return """{"name":"apply_edits","description":"Apply multiple edits to file","parameters":{"type":"object","properties":{"path":{"type":"string"},"edits":{"type":"string","description":"JSON array of {old_content,new_content}"}},"required":["path","edits"]}}"""
     }
 }
 
@@ -388,17 +321,12 @@ class ToolRegistry(context: Context, workspacePath: String) {
 
     fun getTool(name: String): AgentTool? = tools.find { it.name == name }
     
-    fun getSystemPromptSupplement(): String {
+fun getSystemPromptSupplement(): String {
         return """
-        You have access to the following tools. 
-        To use a tool, reply ONLY with a JSON block:
-        { "tool": "tool_name", "args": { "arg_name": "value" } }
+        TOOLS (respond with ONLY JSON: {"tool":"name","args":{...}}):
+        ${tools.map { "- ${it.name}: ${it.description}" }.joinToString("\n")}
         
-        VERY IMPORTANT: Use relative paths ONLY (e.g., "src/main.kt", NOT "/src/main.kt").
-        The workspace root is already handled for you.
-        
-        Available Tools:
-        ${tools.map { "${it.name}: ${it.description}" }.joinToString("\n")}
+        RULES: Use relative paths only. Inspect before editing. Run tests after changes.
         """.trimIndent()
     }
 }

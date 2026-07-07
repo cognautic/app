@@ -51,19 +51,7 @@ class WebSearchTool : AgentTool {
     }
 
     override fun getDefinition(): String {
-        return """
-        {
-            "name": "web_search",
-            "description": "Search the web for information",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": { "type": "string", "description": "The search query" }
-                },
-                "required": ["query"]
-            }
-        }
-        """.trimIndent()
+        return """{"name":"web_search","description":"Search web via DuckDuckGo","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}"""
     }
 }
 
@@ -96,18 +84,6 @@ class ReadUrlTool : AgentTool {
     }
 
     override fun getDefinition(): String {
-        return """
-        {
-            "name": "read_url",
-            "description": "Read content from a website URL",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "url": { "type": "string", "description": "The full URL to read (e.g., https://example.com)" }
-                },
-                "required": ["url"]
-            }
-        }
-        """.trimIndent()
+        return """{"name":"read_url","description":"Fetch and read website content","parameters":{"type":"object","properties":{"url":{"type":"string"}},"required":["url"]}}"""
     }
 }

@@ -30,36 +30,25 @@ class AgentRunner(private val context: android.content.Context, private val work
     ): Flow<ChatMessage> = flow {
         
         val systemPrompt = """
-            You are Cognautic, an expert All-In-One Coding Agent.
-            
-            You are running on an Android environment, but you are capable of coding in any language 
-            (Kotlin, Python, JavaScript, Rust, C++, etc.) and handling any type of project.
-            
-            Current Workspace: $workspacePath
-            
+            You are Cognautic, an expert coding agent.
+
+            Workspace: $workspacePath
             ${toolRegistry.getSystemPromptSupplement()}
-            
-            ${if (globalRules.isNotBlank()) "GLOBAL RULES (MUST OBEY):\n$globalRules\n" else ""}
-            ${if (workspaceRules.isNotBlank()) "WORKSPACE RULES (MUST OBEY):\n$workspaceRules\n" else ""}
-            
+            ${if (globalRules.isNotBlank()) "RULES:\n$globalRules\n" else ""}
+            ${if (workspaceRules.isNotBlank()) "WS-RULES:\n$workspaceRules\n" else ""}
+
             INSTRUCTIONS:
-            1. You have full access to the file system in the workspace. Use 'list_files' to explore and 'read_file' to understand the code.
-            2. When asked to code, ALWAYS check existing files first if relevant.
-            3. Use 'write_file' to create or modify files.
-            4. Provide concise plans before executing complex changes.
-            5. Use 'run_command' to execute shell commands, run tests, or perform build operations.
-            6. You are an autonomous coding agent; use your tools proactively to inspect files, make changes, and verify results.
-            7. Prefer small, reliable steps: inspect before editing, preserve user changes, run focused verification, and stop when the task is complete.
-            
-            IMPORTANT: To use a tool, your ENTIRE response must be valid JSON matching the format:
-            { "tool": "name", "args": { ... } }
-            
-            If you want to speak to the user, just send plain text (do not use JSON format).
+            - Use 'list_files' to explore, 'read_file' to read, 'write_file' to create/modify
+            - Use 'replace_content' for precise edits, 'apply_edits' for multiple changes
+            - Use 'run_command' for shell commands, tests, builds
+            - Prefer small steps: inspect before editing, verify after
+            - To use a tool, respond ONLY with JSON: { "tool": "name", "args": {...} }
+            - For user messages, reply with plain text only.
         """.trimIndent()
 
         val activeMessages = history.toMutableList()
         var loops = 0
-        val MAX_LOOPS = 10
+        val MAX_LOOPS = 5
         
         while (loops < MAX_LOOPS) {
             loops++

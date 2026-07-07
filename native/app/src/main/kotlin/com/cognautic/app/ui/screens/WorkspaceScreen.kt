@@ -315,7 +315,8 @@ fun WorkspaceItem(
                 MaterialTheme.colorScheme.surface
             }
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
     ) {
         Row(
             modifier = Modifier

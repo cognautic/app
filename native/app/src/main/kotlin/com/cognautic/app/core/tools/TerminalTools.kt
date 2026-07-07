@@ -49,18 +49,6 @@ class RunCommandTool(private val workspacePath: String) : AgentTool {
     }
 
     override fun getDefinition(): String {
-        return """
-        {
-            "name": "run_command",
-            "description": "Execute a shell command in the workspace directory",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "command": { "type": "string", "description": "The command to run (e.g., 'ls -la', 'npm test')" }
-                },
-                "required": ["command"]
-            }
-        }
-        """.trimIndent()
+        return """{"name":"run_command","description":"Execute shell command in workspace","parameters":{"type":"object","properties":{"command":{"type":"string"}},"required":["command"]}}"""
     }
 }

@@ -3,3 +3,8 @@ keystore/
 .gradle/
 build/
 .kotlin/
+*.zip
+*.jar
+gradle-8.8/
+gradle-8.8-bin.zip
+gradle-8.8-bin.zip.1
